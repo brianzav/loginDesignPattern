@@ -1,6 +1,6 @@
 import model.Recurso;
 import model.Usuario;
-import service.AutenticacaoService;
+import service.*;
 
 public class App {
     public static void main(String[] args) throws Exception {
@@ -8,13 +8,19 @@ public class App {
     }
 
     private static void runTest() {
-        var usuario = new Usuario(1, "João", "joao@gmail.com", "123", "usuario");
-        var adm = new Usuario(2, "Maria", "maria@gmail.com", "456", "adm");
-        var cadastro = new Recurso("Cadastrar usuário", "adm", true);
-        var consulta = new Recurso("Consultar usuário", "usuario", true);
-        var excluir = new Recurso("Excluir usuário", "adm", false);
-        var login = new Recurso("Logar", "usuario", false);
-        var service = new AutenticacaoService();
+        Autenticador autenticadorPerfil = new AutenticadorPerfil();
+        Autenticador autenticadorSenha = new AutenticadorSenha();
+        Autenticador service = new AutentificacaoService();
+
+        service.setProximo(autenticadorPerfil);
+        autenticadorPerfil.setProximo(autenticadorSenha);
+
+        Usuario usuario = new Usuario(1, "João", "joao@gmail.com", "123", "usuario");
+        Usuario adm = new Usuario(2, "Maria", "maria@gmail.com", "456", "adm");
+        Recurso cadastro = new Recurso("Cadastrar usuário", "adm", true);
+        Recurso consulta = new Recurso("Consultar usuário", "usuario", true);
+        Recurso excluir = new Recurso("Excluir usuário", "adm", false);
+        Recurso login = new Recurso("Logar", "usuario", false);
 
         test(service, usuario, "123", cadastro, "Acesso negado ao recurso Cadastrar usuário");
         test(service, usuario, "123", consulta, "Acesso concedido ao recurso Consultar usuário");
@@ -32,18 +38,14 @@ public class App {
         test(service, adm, "456", consulta, "Acesso negado ao recurso Consultar usuário");
         test(service, adm, "456", excluir, "Recurso Excluir usuário inativo");
         test(service, adm, "456", login, "Acesso negado ao recurso Logar");
-
-       
     }
 
-    private static void test(AutenticacaoService service, Usuario usuario, String senha, Recurso recurso, String resultadoEsperado) {
-        var resultado = service.autenticar(usuario, senha, recurso);
+    private static void test(Autenticador servicoAutenticacao, Usuario usuario, String senha, Recurso recurso, String resultadoEsperado) {
+        var resultado = servicoAutenticacao.autenticar(usuario, senha, recurso);
         if (resultado.equals(resultadoEsperado)) {
             System.out.println(String.format("V %s, %s, %s, %s", usuario.getPerfil(), senha, recurso.getNome(), resultado));
             return;
         }
         System.err.println(String.format("X %s, %s, %s, %s", usuario.getPerfil(), senha, recurso.getNome(), resultado));
     }
-
-
 }
